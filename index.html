@@ -11,36 +11,60 @@
             background-color: midnightblue;
             width: 400px;
             min-height: 600px;
-        }
-
-        #saveButton {
-            display: block;
-            position: absolute;
-            top: 0px;
-            left: 340px;
-            width: 60px;
-            background-color: yellow;
-        }
-
-        #val0 {
-            color: white;
-            font-size: 1em;
-            min-width: 16em;
-            text-align: right;
+            margin: 0px;
+            padding: 4px;
         }
 
         .btn {
             display: block;
             font-size: 1em;
             min-width: 64px;
-            height: 1.5em;
+            max-width: 100%;
+            min-height: 2em;
         }
 
-        td {
-            border: 1px white solid;
+        #menu-buttons {
+            display: block;
+            position: relative;
+            width: 100%;
+            top: 0px;
+            margin-left:auto;
+            margin-right:20px;
+            text-align: right;
+
+            
+            background-color: purple;
         }
 
-        
+        a {
+            color:yellow;
+        }
+
+        a:hover {
+            color: red;
+        }
+
+        #region-buttons {
+            overflow-x:hidden;
+            overflow-y:scroll;
+            max-height:360px;
+        }
+
+        #region-buttons input.btn {
+            word-wrap: break-word;
+            white-space: normal;
+            text-align: right;
+        }
+
+        #val0 {
+            color: white;
+            background-color:slateblue;
+            font-size: 1em;
+            min-width: 16em;
+            text-align: right;
+            word-wrap: break-word;
+
+        }
 
     </style>
     <script src="./jquery-3.6.0.js"></script>
@@ -53,6 +77,8 @@
         let clicks = [ 0n, 0n ];
 
         let clickCount = 0n;
+
+        let scoreboards = undefined;
 
         function formatBigInt(b) {
             return b.toLocaleString();            
@@ -74,12 +100,12 @@
             if (node.length) {
                 node.attr("title", titleStr);
             } else {
-                $(`<input class="btn" id="val${index}" value="+${formatBigInt(values[index])}" type="button" onclick="proc(${index})" title="${titleStr}">`).appendTo("body");
+                $(`<input class="btn" id="val${index}" value="+${formatBigInt(values[index])}" type="button" onclick="proc(${index})" title="${titleStr}">`).appendTo("#region-buttons");
             }
         }
 
         function loadData() {
-            clickCount = BigInt(localStorage.getItem("clickCount") ?? 0);
+            clickCount = BigInt(localStorage.getItem("clickCount") || 0);
 
             let valuesStr = JSON.parse(localStorage.getItem("values"));
             if (valuesStr) {
@@ -104,6 +130,12 @@
                 clicks.map((val, idx, arr) => val.toString())
             );
             localStorage.setItem("clicks", clicksJson);
+
+            try {
+                if (scoreboards) {
+                    scoreboards.setRecord(1, values[0].toString().length);
+                }
+            } catch {}
         }
 
         function clearData() {
@@ -113,8 +145,11 @@
         }
 
         function updateButtonText(target) {
-            let prefix = (target == 0 ? "" : "+");
-            $("#val" + target).val(prefix + formatBigInt(values[target]));
+            if (target == 0) {
+                $("#val0").text(formatBigInt(values[target]));
+            } else {
+                $("#val" + target).val("+" + formatBigInt(values[target]));
+            }
         }
 
         function proc(index) {
@@ -128,16 +163,18 @@
             clickCount++;
 
             // 2桁増えるごとにボタン1個追加
-            let digits = values[0].toString().length;
-
-            //   0 -   99 : 1
-            // 100 - 9999 : 2
-            let availableButtons = 1 + (digits - 1) / 2;
+            let availableButtons = 1 + (values[0].toString().length - 1) / 2;
             
             for (let i = values.length; i <= availableButtons; i++) {
                 addButton(i);
             }
 
+        }
+
+        function toggleScoreboard() {
+            if (scoreboards) {
+                scoreboards.display(1);
+            }
         }
 
 
@@ -158,18 +195,33 @@
                 console.warn("アツマールのおれいコメント設定に失敗 : ", ex);
             }
 
+            // アツマール設定 スコアボード利用可否確認
+            try {
+                scoreboards = window.RPGAtsumaru.scoreboards;
 
+            } catch (ex) {
+                console.warn("アツマールのスコアボードAPIの取得に失敗 : ", ex);
+                //$("#toggle-scoreboards").hide();
+            }
 
         });
 
     </script>
-    <h1 id="pageTitle">ボタンを押すと1増える</h1>
-    <p>Ver.2</p>
-    <input id="saveButton" value="セーブ" type="button" onclick="saveData();" />
 
-    <input class="val" id="val0" value="0" type="button" disabled/>
+    <div id="menu-buttons">
+        <a href="#" id="toggle-scoreboards" type="button" onclick="toggleScoreboard(); return false;">ランキング</a>
+        <a href="#" id="do-save" type="button" onclick="saveData(); return false;">セーブ</a>
+    </div>
+
+    <h1>ボタンを押すと1増える</h1>
+    <p>Ver.2</p>
+
+    <span class="val" id="val0">0</span>
     <hr>
-    <!-- input class="btn" id="val1" value="+1" type="button" onclick="proc(1)" title="初期状態で解放されています" / -->
+    <div id="region-buttons">
+        <!-- input class="btn" id="val1" value="+1" type="button" onclick="proc(1)" title="初期状態で解放されています" / -->
+    </div>
+
 </body>
 
 </html>
