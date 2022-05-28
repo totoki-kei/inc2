@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja-JP">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>ボタンを押すと1増える Ver.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            color: aliceblue;
+            background-color: midnightblue;
+            width: 400px;
+            min-height: 600px;
+        }
+
+        #saveButton {
+            display: block;
+            position: absolute;
+            top: 0px;
+            left: 340px;
+            width: 60px;
+            background-color: yellow;
+        }
+
+        #val0 {
+            color: white;
+            font-size: 1em;
+            min-width: 16em;
+            text-align: right;
+        }
+
+        .btn {
+            display: block;
+            font-size: 1em;
+            min-width: 64px;
+            height: 1.5em;
+        }
+
+        td {
+            border: 1px white solid;
+        }
+
+        
+
+    </style>
+    <script src="./jquery-3.6.0.js"></script>
+</head>
+
+<body>
+    <script lang="javascript">
+
+        let values = [ 0n, 1n ];
+        let clicks = [ 0n, 0n ];
+
+        let clickCount = 0n;
+
+        function formatBigInt(b) {
+            return b.toLocaleString();            
+        }
+
+        function addButton(index) {
+            if (index < 1) return;
+
+            if (!(index in values)) {
+                values[index] = 1n;
+            }
+            if (!(index in clicks)) {
+                clicks[index] = clickCount;
+            }
+
+            let node = $("#val" + index);
+            let titleStr = clicks[index] == 0 ? "初期状態で解放されています" : `クリック ${clicks[index]} 回目に解放されました`;
+
+            if (node.length) {
+                node.attr("title", titleStr);
+            } else {
+                $(`<input class="btn" id="val${index}" value="+${formatBigInt(values[index])}" type="button" onclick="proc(${index})" title="${titleStr}">`).appendTo("body");
+            }
+        }
+
+        function loadData() {
+            clickCount = BigInt(localStorage.getItem("clickCount") ?? 0);
+
+            let valuesStr = JSON.parse(localStorage.getItem("values"));
+            if (valuesStr) {
+                values = valuesStr.map((str, idx, arr) => BigInt(str));
+            }
+
+            let clicksStr = JSON.parse(localStorage.getItem("clicks"));
+            if (clicksStr) {
+                clicks = clicksStr.map((str, idx, arr) => BigInt(str));
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem("clickCount", clickCount.toString());
+
+            let valuesJson = JSON.stringify(
+                values.map((val, idx, arr) => val.toString())
+            );
+            localStorage.setItem("values", valuesJson);
+
+            let clicksJson = JSON.stringify(
+                clicks.map((val, idx, arr) => val.toString())
+            );
+            localStorage.setItem("clicks", clicksJson);
+        }
+
+        function clearData() {
+            localStorage.removeItem("clickCount");
+            localStorage.removeItem("values");
+            localStorage.removeItem("clicks");
+        }
+
+        function updateButtonText(target) {
+            let prefix = (target == 0 ? "" : "+");
+            $("#val" + target).val(prefix + formatBigInt(values[target]));
+        }
+
+        function proc(index) {
+            if (index < 1) return;
+
+            let target = index - 1;
+
+            values[target] += values[index];
+            updateButtonText(target);
+
+            clickCount++;
+
+            // 2桁増えるごとにボタン1個追加
+            let digits = values[0].toString().length;
+
+            //   0 -   99 : 1
+            // 100 - 9999 : 2
+            let availableButtons = 1 + (digits - 1) / 2;
+            
+            for (let i = values.length; i <= availableButtons; i++) {
+                addButton(i);
+            }
+
+        }
+
+
+        $(() => {
+            loadData();
+            
+            for (let i = 0; i < values.length; i++) {
+                addButton(i);
+                updateButtonText(i);
+            }
+        });
+
+    </script>
+    <h1 id="pageTitle">ボタンを押すと1増える</h1>
+    <p>Ver.2</p>
+    <input id="saveButton" value="セーブ" type="button" onclick="saveData();" />
+
+    <input class="val" id="val0" value="0" type="button" disabled/>
+    <hr>
+    <!-- input class="btn" id="val1" value="+1" type="button" onclick="proc(1)" title="初期状態で解放されています" / -->
+</body>
+
+</html>
