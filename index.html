@@ -151,13 +151,13 @@
 
             // アツマール設定 おれいポップアップ無効化
             try {
-                let atsumaru_popup_modify = window.RPGAtsumaru.popups.setThanksSettings;
-                if (atsumaru_popup_modify) {
-                    atsumaru_popup_modify ({autoThanks: false});
-                }
-            } catch {
-                console.warn("アツマールのおれいコメント設定に失敗");
+                window.RPGAtsumaru.popups.setThanksSettings({
+                    autoThanks: false
+                });
+            } catch (ex) {
+                console.warn("アツマールのおれいコメント設定に失敗 : ", ex);
             }
+
 
 
         });
